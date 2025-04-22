@@ -1,52 +1,57 @@
 import { useRef, useState } from "react";
 import "./App.css";
-import { EventType, KeyType, optionsData, SelectItem } from "./constants";
+import { KeyType, optionsData, SelectItem } from "./constants";
 
 function App() {
   const [isOptionVisible, setIsOptionVisible] = useState(false);
   const [input, setInput] = useState("");
   const [currentOptionIndex, setCurrentOptionIndex] = useState(0);
   const [filteredOptions, setFilteredOptions] = useState(optionsData);
+  const [selectValue, setSelectValue] = useState<SelectItem[]>([]);
 
-  const comboRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement, Element>) => {
-    if (e.type === EventType.FOCUS) {
-      setIsOptionVisible(true);
-    } else {
-      setTimeout(() => {
-        setIsOptionVisible(false);
-      }, 200);
-    }
-  };
+  const backdropDivRef = useRef<HTMLDivElement>(null);
 
   const optionSelectHandler = (option: SelectItem) => {
-    setInput(option.value);
-    setIsOptionVisible(false);
+    const isSelected = selectValue.includes(option);
+    if (isSelected) {
+      removeSelectedOption(option);
+    } else {
+      setSelectValue((values) => [...values, option]);
+    }
+    setInput("");
   };
 
   const keyDownHandler = (e: React.KeyboardEvent<HTMLInputElement>) => {
     switch (e.key) {
       case KeyType.Up:
         e.preventDefault();
-        if (currentOptionIndex !== 0) {
-          setCurrentOptionIndex((prevIndex) => prevIndex - 1);
-        } else {
-          setCurrentOptionIndex(optionsData.length - 1);
+        if (isOptionVisible) {
+          if (currentOptionIndex !== 0) {
+            setCurrentOptionIndex((prevIndex) => prevIndex - 1);
+          } else {
+            setCurrentOptionIndex(filteredOptions.length - 1);
+          }
         }
         break;
       case KeyType.Down:
         e.preventDefault();
-        if (currentOptionIndex !== optionsData.length - 1) {
-          setCurrentOptionIndex((prevIndex) => prevIndex + 1);
-        } else {
-          setCurrentOptionIndex(0);
+        if (isOptionVisible) {
+          if (currentOptionIndex !== filteredOptions.length - 1) {
+            setCurrentOptionIndex((prevIndex) => prevIndex + 1);
+          } else {
+            setCurrentOptionIndex(0);
+          }
         }
         break;
       case KeyType.Enter:
-        setInput(optionsData[currentOptionIndex].value);
-        setIsOptionVisible(false);
+        if (isOptionVisible) {
+          setSelectValue((values) => [
+            ...values,
+            optionsData[currentOptionIndex],
+          ]);
+          setInput("");
+          setIsOptionVisible(false);
+        }
         break;
       case KeyType.Escape:
         setIsOptionVisible(false);
@@ -61,23 +66,45 @@ function App() {
     const filteredList = optionsData.filter((item) =>
       item.label.toLowerCase().includes(e.target.value.toLowerCase())
     );
+    if (filteredList.length > 0) {
+      setIsOptionVisible(true);
+    }
     setFilteredOptions(filteredList);
   };
 
-  const onMouseEnterHandler = (index: number) => {
+  const onMouseHoverHandler = (index: number) => {
     setCurrentOptionIndex(index);
   };
 
+  const isOptionSelected = (item: SelectItem) => selectValue.includes(item);
+
+  const removeSelectedOption = (item: SelectItem) => {
+    setSelectValue((prevValue) =>
+      prevValue.filter((value) => value.id !== item.id)
+    );
+  };
+
   return (
-    <div className="wrapper">
-      <div ref={comboRef}>
+    <div
+      ref={backdropDivRef}
+      className="wrapper"
+      id="backdrop"
+      onClick={(e) => {
+        if (backdropDivRef.current === e.target) {
+          setIsOptionVisible(false);
+        }
+      }}
+    >
+      <div className="combobox">
         <div className="input-container">
+          {selectValue.map((option) => (
+            <span key={option.id} className="tag">
+              {option.label}
+            </span>
+          ))}
           <input
-            ref={inputRef}
             className="input-box"
             type="text"
-            onFocus={handleFocus}
-            onBlur={handleFocus}
             value={input}
             onKeyDown={keyDownHandler}
             onChange={inputChangeHandler}
@@ -88,19 +115,28 @@ function App() {
             {filteredOptions.length ? (
               filteredOptions.map((item, index) => {
                 return (
-                  <li
-                    key={item.id}
-                    onClick={() => optionSelectHandler(item)}
-                    style={{
-                      backgroundColor:
-                        index === currentOptionIndex
-                          ? "rgb(242, 242, 242)"
-                          : "white",
-                    }}
-                    onMouseEnter={() => onMouseEnterHandler(index)}
-                  >
-                    {item.label}
-                  </li>
+                  <div className="item-container" key={item.id}>
+                    <li
+                      onClick={() => optionSelectHandler(item)}
+                      style={{
+                        backgroundColor:
+                          index === currentOptionIndex
+                            ? "rgb(242, 242, 242)"
+                            : "white",
+                      }}
+                      onMouseEnter={() => onMouseHoverHandler(index)}
+                    >
+                      {item.label}
+                    </li>
+                    {isOptionSelected(item) && (
+                      <button
+                        className="btn-remove"
+                        onClick={() => removeSelectedOption(item)}
+                      >
+                        x
+                      </button>
+                    )}
+                  </div>
                 );
               })
             ) : (
