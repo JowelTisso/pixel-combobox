@@ -98,12 +98,15 @@ function App() {
       <div className="combobox">
         <div className="input-container">
           {selectValue.map((option) => (
-            <span key={option.id} className="tag">
+            <span aria-label="selected option" key={option.id} className="tag">
               {option.label}
             </span>
           ))}
           <input
             className="input-box"
+            role="combobox"
+            aria-expanded={isOptionVisible ? "true" : "false"}
+            aria-controls="option-list"
             type="text"
             value={input}
             onKeyDown={keyDownHandler}
@@ -111,12 +114,20 @@ function App() {
           />
         </div>
         {isOptionVisible && (
-          <ul className="input-options">
+          <ul
+            id="option-list"
+            className="input-options"
+            role="listbox"
+            aria-label="list of fruits"
+            aria-multiselectable="true"
+          >
             {filteredOptions.length ? (
               filteredOptions.map((item, index) => {
                 return (
                   <div className="item-container" key={item.id}>
                     <li
+                      role="option"
+                      aria-label="fruit"
                       onClick={() => optionSelectHandler(item)}
                       style={{
                         backgroundColor:
@@ -124,6 +135,7 @@ function App() {
                             ? "rgb(242, 242, 242)"
                             : "white",
                       }}
+                      aria-selected={selectValue.includes(item)}
                       onMouseEnter={() => onMouseHoverHandler(index)}
                     >
                       {item.label}
