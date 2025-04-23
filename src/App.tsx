@@ -95,6 +95,11 @@ function App() {
         }
       }}
     >
+      <h1 className="heading">
+        <img className="logo" src="/fruits.png" alt="fruits logo" /> Fruits
+        Selector
+      </h1>
+      <h2 className="sub-heading">combobox</h2>
       <div className="combobox">
         <div className="input-container">
           {selectValue.map((option) => (
